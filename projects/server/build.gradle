@@ -1,0 +1,46 @@
+plugins {
+    id "application"
+    id "build-logic-app"
+}
+
+def module = "fr.cyrilneveu.server"
+
+group = "fr.cyrilneveu"
+version = "0.0.1"
+
+dependencies {
+    implementation project(":projects:common")
+}
+
+application {
+    mainClass = "${module}.Main"
+    mainModule = module
+    // applicationDefaultJvmArgs = ["-Dgreeting.language=en"]
+    // executableDir = "custom_bin_dir"
+}
+
+tasks.register("fatJarServer", Jar) {
+    manifest {
+        attributes "Main-Class": "${module}.Main"
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    with jar
+}
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+tasks.register("createServerInstaller", Exec) {
+    group = "DevOps"
+    description = "Génère un .exe pour installer le projet."
+
+    dependsOn ":projects:server:fatJarServer"
+
+    def timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
+    commandLine "iscc", "/dMyAppVersion=${version}", "/dMyTimestamp=${timestamp}", "setup.iss"
+}

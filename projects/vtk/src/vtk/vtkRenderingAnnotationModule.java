@@ -1,0 +1,4 @@
+package vtk;
+
+class vtkRenderingAnnotationModule {
+}

@@ -1,0 +1,39 @@
+plugins {
+    id "java"
+    id "idea"
+    id "eclipse"
+    id "org.gradlex.extra-java-module-info"
+}
+
+dependencies {
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.8.1"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.8.1"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+eclipse {
+    classpath {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+
+extraJavaModuleInfo {
+    skipLocalJars = true
+    deriveAutomaticModuleNamesFromFileNames = true
+    module("com.profesorfalken:jPowerShell", "com.profesorfalken.jpowershell") {
+        requires("java.logging")
+        exportAllPackages()
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    modularity.inferModulePath.set(true)
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}

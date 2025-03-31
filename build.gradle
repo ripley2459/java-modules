@@ -1,0 +1,40 @@
+tasks.register("generateChangelog") {
+    group = "DevOps"
+    description = "Génère un fichier contenant la liste des commits depuis le dernier tag."
+
+    doLast {
+        def lastTag = runShell("git describe --tags --abbrev=0")
+        def penultimate = runShell("git describe --tags --abbrev=0 --exclude=${lastTag}")
+
+        println "Last: $lastTag"
+        println "Penultimate: $penultimate"
+
+        def changes = runShell(["git", "log", "--date=format:%d %b %Y", "--pretty=%s", "${penultimate}..HEAD"])
+        if (changes.isEmpty()) {
+            println "No changes since ${penultimate}"
+            return
+        }
+
+        def f = getFile("CHANGELOG.md")
+        changes = changes ?: "No changes"
+        f.write(changes, "UTF-8")
+    }
+}
+
+def getFile(String relativePath) {
+    return new File(projectDir, relativePath)
+}
+
+static runShell(command) {
+    def process = command.execute()
+    def outputStream = new StringBuffer()
+    def errorStream = new StringBuffer()
+
+    process.waitForProcessOutput(outputStream, errorStream)
+
+    errorStream.toString().with {
+        if (it) throw new GradleException("Erreur pendant l'éxécution de la commande ${command}:\n>${it}")
+    }
+
+    return outputStream.toString().trim()
+}

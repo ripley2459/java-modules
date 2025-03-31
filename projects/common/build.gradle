@@ -1,0 +1,14 @@
+plugins {
+    id "java-library"
+    id "build-logic"
+}
+
+def module = "fr.cyrilneveu.common"
+
+group = "fr.cyrilneveu"
+version = "0.0.1"
+
+dependencies {
+    implementation project(":projects:vtk")
+    implementation "com.profesorfalken:jPowerShell:3.1.1"
+}

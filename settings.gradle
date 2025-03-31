@@ -1,0 +1,23 @@
+pluginManagement {
+    repositories{
+        mavenCentral()
+        gradlePluginPortal()
+        google()
+    }
+    includeBuild "projects/gradle-plugins"
+}
+
+dependencyResolutionManagement {
+    repositories{
+        mavenCentral()
+        gradlePluginPortal()
+        google()
+    }
+}
+
+rootProject.name = rootProject.projectDir.getName()
+
+include "projects:common"
+include "projects:server"
+include "projects:client"
+include "projects:vtk"
