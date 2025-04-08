@@ -1,6 +1,6 @@
 package fr.cyrilneveu.client;
 
-import fr.cyrilneveu.common.Utils;
+import fr.cyrilneveu.core.Utils;
 import vtk.*;
 
 public class Main {

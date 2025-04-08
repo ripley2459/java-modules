@@ -1,6 +1,6 @@
 plugins {
-    id "java-library"
-    id "build-logic"
+    id "application"
+    id "build-logic-app"
 }
 
 def module = "fr.cyrilneveu.common"
@@ -10,5 +10,58 @@ version = "0.0.1"
 
 dependencies {
     implementation project(":projects:vtk")
-    implementation "com.profesorfalken:jPowerShell:3.1.1"
+    implementation project(":projects:core")
+}
+
+application {
+    mainClass = "${module}.Main"
+    mainModule = "${module}"
+}
+
+tasks.register("fatJarCommon", Jar) {
+    dependsOn ":projects:vtk:build"
+    dependsOn ":projects:core:build"
+
+    manifest {
+        attributes "Main-Class": "fr.cyrilneveu.common.Main"
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from {
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    } with jar
+}
+
+tasks.register("createCommonJRE", Exec) {
+    def jreFolder = "build/libs/jre"
+    doFirst {
+        def folder = file(jreFolder)
+        if (folder.exists())
+            delete folder
+    }
+
+    commandLine "jlink",
+            "--module-path", "$System.env.JAVA_HOME/jmods",
+            "--add-modules", 'java.base,java.desktop,java.se,java.xml,jdk.localedata',
+            "--include-locales", "en,fr",
+            "--output", "${jreFolder}"
+}
+
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+tasks.register("createCommonInstaller", Exec) {
+    group = "DevOps"
+    description = "Génère un .exe pour installer le projet."
+
+    dependsOn ":projects:common:fatJarCommon"
+    dependsOn ":projects:common:createCommonJRE"
+
+    def timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
+    commandLine "iscc",
+            "/dMyAppVersion=${version}",
+            "/dMyTimestamp=${timestamp}",
+            "setup.iss"
 }

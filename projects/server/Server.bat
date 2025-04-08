@@ -1,3 +1,3 @@
-java -jar server.jar
+java -jar server.jar targetModule=server
 
 pause

@@ -10,18 +10,20 @@ version = "0.0.1"
 
 dependencies {
     implementation project(":projects:vtk")
+    implementation project(":projects:core")
     implementation project(":projects:common")
 }
 
 application {
     mainClass = "${module}.Main"
-    mainModule = module
+    mainModule = "${module}"
     // applicationDefaultJvmArgs = ["-Dgreeting.language=en"]
     // executableDir = "custom_bin_dir"
 }
 
 tasks.register("fatJarClient", Jar) {
     dependsOn ":projects:vtk:build"
+    dependsOn ":projects:core:build"
     dependsOn ":projects:common:build"
 
     manifest {
@@ -31,10 +33,24 @@ tasks.register("fatJarClient", Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     from {
-        configurations.runtimeClasspath.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     } with jar
+}
+
+tasks.register("createClientJRE", Exec) {
+    def jreFolder = "build/libs/jre"
+    doFirst {
+        def folder = file(jreFolder)
+        if (folder.exists())
+            delete folder
+    }
+
+    commandLine "jlink",
+            "--module-path", "$System.env.JAVA_HOME/jmods",
+            "--add-modules", 'java.base,java.desktop,java.se,java.xml,jdk.localedata',
+            "--include-locales", "en,fr",
+            "--output", "${jreFolder}"
 }
 
 import java.time.LocalDateTime
@@ -45,7 +61,11 @@ tasks.register("createClientInstaller", Exec) {
     description = "Génère un .exe pour installer le projet."
 
     dependsOn ":projects:client:fatJarClient"
+    dependsOn ":projects:client:createClientJRE"
 
     def timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
-    commandLine "iscc", "/dMyAppVersion=${version}", "/dMyTimestamp=${timestamp}", "setup.iss"
+    commandLine "iscc",
+            "/dMyAppVersion=${version}",
+            "/dMyTimestamp=${timestamp}",
+            "setup.iss"
 }

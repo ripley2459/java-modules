@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 
 rootProject.name = rootProject.projectDir.getName()
 
+include "projects:core"
 include "projects:common"
 include "projects:server"
 include "projects:client"

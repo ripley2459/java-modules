@@ -1,7 +1,5 @@
 module fr.cyrilneveu.common {
-    requires com.profesorfalken.jpowershell;
-    requires java.desktop;
-    requires transitive vtk;
-
+    requires vtk;
+    requires fr.cyrilneveu.core;
     exports fr.cyrilneveu.common;
 }

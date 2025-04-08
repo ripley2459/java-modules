@@ -1,10 +1,10 @@
 
-#define MyAppName "Client"
+#define MyAppName "Common"
 #define MyAppPublisher "Cyril Neveu"
 #define MyAppURL "https://cyrilneveu.fr/"
-#define MyAppExeName "Client.bat"
+#define MyAppExeName "Common.bat"
 ;#define MyAppAssocName MyAppName + " File"
-#define MyAppId "{0d6edb80-1702-49f7-8f1c-d826c4938b15}"
+#define MyAppId "{51b2abc3-3557-428c-bed6-763bd3032153}"
 ;#define MyAppAssocExt ".bat"
 ;#define MyAppAssocKey StringChange(MyAppAssocName, " ", "") + MyAppAssocExt
 

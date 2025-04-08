@@ -21,6 +21,59 @@ tasks.register("generateChangelog") {
     }
 }
 
+tasks.register("generateChangelogFromJira") {
+    group = "DevOps"
+    description = "Génère un fichier contenant la liste des commits depuis le dernier tag en se basant sur Jira."
+
+    doLast {
+        def lastTag = runShell("git describe --tags --abbrev=0")
+        def penultimate = runShell("git describe --tags --abbrev=0 --exclude=${lastTag}")
+        println "Last: $lastTag"
+        println "Penultimate: $penultimate"
+
+        def changes = runShell(["git", "log", "--date=format:%d %b %Y", "--pretty=%s", "${penultimate}..${lastTag}"])
+        def jiraTicketIds = changes.split('\n').collect { commit ->
+            def matcher = commit =~ /([A-Z]+-\d+)/
+            return matcher ? matcher[0][1] : null
+        }.findAll { it != null }.unique()
+        println "Jira Tickets found: ${jiraTicketIds}"
+
+        def f = getFile("CHANGELOG.md")
+        def c = ""
+
+        jiraTicketIds.each { ticketId ->
+            def json = getJiraTicketTitle(ticketId)
+            if (json.fields.status.statusCategory.key == "done") {
+                c += "## ${json.fields.summary}\n"
+                def desc = "${json.fields.description.content.content.text}\n"
+                desc = desc.replace("[[", "");
+                desc = desc.replace("]]", "");
+                c += "${desc}\n"
+                c += "\n"
+                // println "ID: ${json.key}"
+                // println "Name: ${json.fields.summary}"
+                // println "Description: ${json.fields.description.content.content.text}"
+            }
+        }
+
+        c = c ?: "No changes"
+        f.write(c, "UTF-8")
+    }
+}
+
+def getJiraTicketTitle(ticketId) {
+    def jiraApiToken = System.getenv("JIRA_API_TOKEN")
+    def url = "https://PROJECT_URL.atlassian.net/rest/api/3/issue/${ticketId}"
+    def connection = new URL(url).openConnection()
+
+    connection.setRequestProperty("Authorization", "Basic ${jiraApiToken}")
+    connection.setRequestProperty("Content-Type", "application/json")
+    def response = connection.inputStream.text
+    def json = new groovy.json.JsonSlurper().parseText(response)
+
+    return json
+}
+
 def getFile(String relativePath) {
     return new File(projectDir, relativePath)
 }

@@ -3,33 +3,62 @@ plugins {
     id "build-logic-app"
 }
 
-def module = "fr.cyrilneveu.server"
+def module = "fr.cyrilneveu.common"
 
 group = "fr.cyrilneveu"
 version = "0.0.1"
 
 dependencies {
+    implementation project(":projects:vtk")
+    implementation project(":projects:core")
     implementation project(":projects:common")
 }
 
 application {
-    mainClass = "${module}.Main"
-    mainModule = module
-    // applicationDefaultJvmArgs = ["-Dgreeting.language=en"]
-    // executableDir = "custom_bin_dir"
+    mainClass = "fr.cyrilneveu.common.Main"
+    // mainModule = "${module}"
+}
+
+tasks.named("run", JavaExec) {
+    group = "application"
+    mainClass = "fr.cyrilneveu.common.Main"
+    // mainModule = "fr.ekoscan.ekout"
+    classpath = sourceSets.main.runtimeClasspath
+    args = ["targetModule=server"]
+    // jvmArgs = ['-Xms512m', '-Xmx1024m']
+    // environment 'ENV_MODE', 'MODE1'
 }
 
 tasks.register("fatJarServer", Jar) {
+    dependsOn ":projects:vtk:build"
+    dependsOn ":projects:core:build"
+    dependsOn ":projects:common:build"
+
     manifest {
-        attributes "Main-Class": "${module}.Main"
+        attributes "Main-Class": "fr.cyrilneveu.common.Main"
     }
+
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     from {
-        configurations.runtimeClasspath.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    } with jar
+}
+
+tasks.register("createServerJRE", Exec) {
+    def jreFolder = "build/libs/jre"
+    doFirst {
+        def folder = file(jreFolder)
+        if (folder.exists())
+            delete folder
     }
-    with jar
+
+    commandLine "jlink",
+            "--module-path", "$System.env.JAVA_HOME/jmods",
+            "--add-modules", 'java.base,java.desktop,java.se,java.xml,jdk.localedata',
+            "--include-locales", "en,fr",
+            "--output", "${jreFolder}"
 }
 
 import java.time.LocalDateTime
@@ -40,7 +69,11 @@ tasks.register("createServerInstaller", Exec) {
     description = "Génère un .exe pour installer le projet."
 
     dependsOn ":projects:server:fatJarServer"
+    dependsOn ":projects:server:createServerJRE"
 
     def timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
-    commandLine "iscc", "/dMyAppVersion=${version}", "/dMyTimestamp=${timestamp}", "setup.iss"
+    commandLine "iscc",
+            "/dMyAppVersion=${version}",
+            "/dMyTimestamp=${timestamp}",
+            "setup.iss"
 }

@@ -1,4 +1,4 @@
-package fr.cyrilneveu.common;
+package fr.cyrilneveu.core;
 
 import com.profesorfalken.jpowershell.PowerShell;
 import vtk.vtkNativeLibrary;

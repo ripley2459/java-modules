@@ -1,9 +1,3 @@
-/**
- *
- */
-/**
- *
- */
 open module vtk
 {
 	requires java.desktop;
